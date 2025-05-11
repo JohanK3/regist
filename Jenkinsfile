@@ -10,7 +10,7 @@ pipeline {
         APP_NAME = "registre-pipeline-ci"
         RELEASE = "1.0.0"
         DOCKER_USER = "johankarl"
-        DOCKER_CREDENTIALS_ID = "jenkins-token-docker"
+        DOCKER_CREDENTIALS_ID = "dockerhub"
         IMAGE_NAME = "${DOCKER_USER}/${APP_NAME}"
         IMAGE_TAG = "${RELEASE}-${BUILD_NUMBER}"
     }

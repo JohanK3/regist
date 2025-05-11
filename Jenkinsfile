@@ -71,6 +71,7 @@ pipeline {
                 script {
                     sh """
                         docker run --rm \
+                        -e TRIVY_TIMEOUT=10m \
                         -v /var/run/docker.sock:/var/run/docker.sock \
                         aquasec/trivy image ${IMAGE_NAME}:latest \
                         --no-progress \
@@ -82,13 +83,14 @@ pipeline {
                 }
             }
         }
-        stage ('Cleanup Artifacts') {
-           steps {
-               script {
-                    sh "docker rmi ${IMAGE_NAME}:${IMAGE_TAG}"
-                    sh "docker rmi ${IMAGE_NAME}:latest"
-               }
-          }
-       }
+
+        stage('Nettoyage des artefacts Docker') {
+            steps {
+                script {
+                    sh "docker rmi ${IMAGE_NAME}:${IMAGE_TAG} || true"
+                    sh "docker rmi ${IMAGE_NAME}:latest || true"
+                }
+            }
+        }
     }
 }

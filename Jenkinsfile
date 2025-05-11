@@ -2,8 +2,17 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven3'       // Maven configuré dans Jenkins (nom global tools)
-        jdk 'Java17'         // JDK 17 configuré dans Jenkins (nom global tools)
+        maven 'Maven3'
+        jdk 'Java17'
+    }
+
+    environment {
+        APP_NAME = "registre-pipeline-ci"
+        RELEASE = "1.0.0"
+        DOCKER_USER = "johankarl"
+        DOCKER_CREDENTIALS_ID = "dockerhub-creds"
+        IMAGE_NAME = "${DOCKER_USER}/${APP_NAME}"
+        IMAGE_TAG = "${RELEASE}-${BUILD_NUMBER}"
     }
 
     stages {
@@ -17,7 +26,7 @@ pipeline {
             steps {
                 git branch: 'master',
                     url: 'https://github.com/JohanK3/regist.git'
-                // Ajoute credentialsId: 'github' si le dépôt est privé
+                // Ajoute credentialsId si dépôt privé
             }
         }
 
@@ -38,6 +47,19 @@ pipeline {
                 script {
                     withSonarQubeEnv(credentialsId: 'jenkins-token-sonar') {
                         sh 'mvn sonar:sonar'
+                    }
+                }
+            }
+        }
+
+        stage("Build & Push Docker Image") {
+            steps {
+                script {
+                    docker_image = docker.build("${IMAGE_NAME}")
+
+                    docker.withRegistry('', DOCKER_CREDENTIALS_ID) {
+                        docker_image.push("${IMAGE_TAG}")
+                        docker_image.push("latest")
                     }
                 }
             }

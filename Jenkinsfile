@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven3'
-        jdk 'Java17'
+        maven 'Maven3'       // Maven configuré dans Jenkins
+        jdk 'Java17'         // JDK configuré dans Jenkins
     }
 
     environment {
@@ -16,33 +16,34 @@ pipeline {
     }
 
     stages {
-        stage('Clean Workspace') {
+
+        stage('Nettoyage de l\'espace de travail') {
             steps {
                 cleanWs()
             }
         }
 
-        stage('Checkout Code') {
+        stage('Récupération du code source') {
             steps {
                 git branch: 'master',
                     url: 'https://github.com/JohanK3/regist.git'
-                // Ajoute credentialsId si dépôt privé
+                // Ajouter credentialsId: 'github-token' si le dépôt est privé
             }
         }
 
-        stage('Build with Maven') {
+        stage('Compilation Maven') {
             steps {
                 sh 'mvn clean package'
             }
         }
 
-        stage('Test Application') {
+        stage('Exécution des tests') {
             steps {
                 sh 'mvn test'
             }
         }
 
-        stage('SonarQube Analysis') {
+        stage('Analyse SonarQube') {
             steps {
                 script {
                     withSonarQubeEnv(credentialsId: 'jenkins-token-sonar') {
@@ -52,17 +53,42 @@ pipeline {
             }
         }
 
-        stage("Build & Push Docker Image") {
+        stage('Construction et Push de l\'image Docker') {
             steps {
                 script {
-                    docker_image = docker.build("${IMAGE_NAME}")
+                    def dockerImage = docker.build("${IMAGE_NAME}")
 
                     docker.withRegistry('', DOCKER_CREDENTIALS_ID) {
-                        docker_image.push("${IMAGE_TAG}")
-                        docker_image.push("latest")
+                        dockerImage.push("${IMAGE_TAG}")
+                        dockerImage.push("latest")
                     }
                 }
             }
         }
+
+        stage('Analyse de sécurité avec Trivy') {
+            steps {
+                script {
+                    sh """
+                        docker run --rm \
+                        -v /var/run/docker.sock:/var/run/docker.sock \
+                        aquasec/trivy image ${IMAGE_NAME}:latest \
+                        --no-progress \
+                        --scanners vuln \
+                        --exit-code 0 \
+                        --severity HIGH,CRITICAL \
+                        --format table
+                    """
+                }
+            }
+        }
+        stage ('Cleanup Artifacts') {
+           steps {
+               script {
+                    sh "docker rmi ${IMAGE_NAME}:${IMAGE_TAG}"
+                    sh "docker rmi ${IMAGE_NAME}:latest"
+               }
+          }
+       }
     }
 }

@@ -10,7 +10,7 @@ pipeline {
         APP_NAME = "registre-pipeline-ci"
         RELEASE = "1.0.0"
         DOCKER_USER = "johankarl"
-        DOCKER_CREDENTIALS_ID = "dockerhub-creds"
+        DOCKER_CREDENTIALS_ID = "jenkins-token-docker"
         IMAGE_NAME = "${DOCKER_USER}/${APP_NAME}"
         IMAGE_TAG = "${RELEASE}-${BUILD_NUMBER}"
     }
@@ -57,7 +57,7 @@ pipeline {
                 script {
                     docker_image = docker.build("${IMAGE_NAME}")
 
-                    docker.withRegistry('', DOCKER_PASS) {
+                    docker.withRegistry('', DOCKER_CREDENTIALS_ID) {
                         docker_image.push("${IMAGE_TAG}")
                         docker_image.push("latest")
                     }

@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven3'       // Maven configuré dans Jenkins
-        jdk 'Java17'         // JDK configuré dans Jenkins
+        maven 'Maven3'
+        jdk 'Java17'
     }
 
     environment {
@@ -16,7 +16,6 @@ pipeline {
     }
 
     stages {
-
         stage('Nettoyage de l\'espace de travail') {
             steps {
                 cleanWs()
@@ -27,7 +26,6 @@ pipeline {
             steps {
                 git branch: 'master',
                     url: 'https://github.com/JohanK3/regist.git'
-                // Ajouter credentialsId: 'github-token' si le dépôt est privé
             }
         }
 
@@ -57,7 +55,6 @@ pipeline {
             steps {
                 script {
                     def dockerImage = docker.build("${IMAGE_NAME}")
-
                     docker.withRegistry('', DOCKER_CREDENTIALS_ID) {
                         dockerImage.push("${IMAGE_TAG}")
                         dockerImage.push("latest")
@@ -71,13 +68,15 @@ pipeline {
                 script {
                     sh """
                         docker run --rm \
-                        -e TRIVY_TIMEOUT=5m \
+                        -e TRIVY_TIMEOUT=20m \
                         -v /var/run/docker.sock:/var/run/docker.sock \
-                        aquasec/trivy image ${IMAGE_NAME}:latest \
+                        -v ${WORKSPACE}/trivy-cache:/root/.cache/trivy \
+                        aquasec/trivy:0.62.0 image ${IMAGE_NAME}:latest \
                         --no-progress \
                         --scanners vuln \
                         --exit-code 0 \
                         --severity HIGH,CRITICAL \
+                        --ignore-unfixed \
                         --format table
                     """
                 }

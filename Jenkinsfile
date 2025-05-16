@@ -71,7 +71,7 @@ pipeline {
                 script {
                     sh """
                         docker run --rm \
-                        -e TRIVY_TIMEOUT=10m \
+                        -e TRIVY_TIMEOUT=5m \
                         -v /var/run/docker.sock:/var/run/docker.sock \
                         aquasec/trivy image ${IMAGE_NAME}:latest \
                         --no-progress \

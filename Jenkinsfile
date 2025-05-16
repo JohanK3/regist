@@ -7,7 +7,7 @@ pipeline {
     }
 
     environment {
-        APP_NAME = "registre-pipeline-ci"
+        APP_NAME = "registre-ci"
         RELEASE = "1.0.0"
         DOCKER_USER = "johankarl"
         DOCKER_CREDENTIALS_ID = "dockerhub"
